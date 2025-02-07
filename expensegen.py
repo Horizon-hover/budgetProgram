@@ -1,51 +1,36 @@
-def get_expense_input(expense_name, period):
+def get_numeric_input(prompt):
     while True:
         try:
-            if period == 'weekly':
-                expense = float(input(f"Enter your weekly {expense_name} expense (£): "))
-                return expense * 4  # Convert weekly expense to monthly
-            else:
-                return float(input(f"Enter your monthly {expense_name} expense (£): "))
+            return float(input(prompt))
         except ValueError:
             print("Invalid input. Please enter a numerical value.")
+
+def get_expense_input(expense_name, period):
+    prompt = f"Enter your {period} {expense_name} expense (£): "
+    expense = get_numeric_input(prompt)
+    return expense * 4 if period == 'weekly' else expense
 
 def get_income_input(period):
-    while True:
-        try:
-            if period == 'weekly':
-                income = float(input("Enter your weekly income (£): "))
-                return income * 4  # Convert weekly income to monthly
-            else:
-                return float(input("Enter your monthly income (£): "))
-        except ValueError:
-            print("Invalid input. Please enter a numerical value.")
+    prompt = f"Enter your {period} income (£): "
+    income = get_numeric_input(prompt)
+    return income * 4 if period == 'weekly' else income
 
-def calculate_total_expenses(expenses):
-    return sum(expenses.values())
-
-def display_monthly_report(income, expenses):
-    print("\nMonthly Budget Summary")
+def display_report(income, expenses, period):
+    print(f"\n{period.capitalize()} Budget Summary")
     print("----------------------")
+    
+    if period == 'weekly':
+        income /= 4
+        expenses = {k: v / 4 for k, v in expenses.items()}
+    
     print(f"Income: £{income:.2f}")
     for expense_name, amount in expenses.items():
         print(f"{expense_name.capitalize()}: £{amount:.2f}")
-    total_expenses = calculate_total_expenses(expenses)
+    
+    total_expenses = sum(expenses.values())
     print("----------------------")
-    print(f"Total Monthly Expenses: £{total_expenses:.2f}")
-    predict_spending(income, total_expenses)
-
-def display_weekly_report(income, expenses):
-    print("\nWeekly Budget Summary")
-    print("----------------------")
-    weekly_income = income / 4
-    print(f"Weekly Income: £{weekly_income:.2f}")
-    for expense_name, amount in expenses.items():
-        weekly_expense = amount / 4
-        print(f"Weekly {expense_name.capitalize()}: £{weekly_expense:.2f}")
-    total_weekly_expenses = calculate_total_expenses(expenses) / 4
-    print("----------------------")
-    print(f"Total Weekly Expenses: £{total_weekly_expenses:.2f}")
-    predict_spending(weekly_income * 4, total_weekly_expenses * 4)
+    print(f"Total {period.capitalize()} Expenses: £{total_expenses:.2f}")
+    predict_spending(income * (4 if period == 'weekly' else 1), total_expenses * (4 if period == 'weekly' else 1))
 
 def predict_spending(total_income, total_expenses):
     remaining_budget = total_income - total_expenses
@@ -63,40 +48,39 @@ def main():
         print("Budget Generator")
 
         # Prompt user to input expenses in monthly, weekly terms, or exit
-        while True:
-            period = input("Would you like to input your expenses in monthly, weekly terms, or exit? (monthly/weekly/exit): ").strip().lower()
-            if period in ['monthly', 'weekly', 'exit']:
-                break
-            else:
-                print("Invalid choice. Please select 'monthly', 'weekly', or 'exit'.")
-
+        period = input("Would you like to input your expenses in monthly, weekly terms, or exit? (monthly/weekly/exit): ").strip().lower()
         if period == 'exit':
             print("Exiting the program.")
             break
+        elif period not in ['monthly', 'weekly']:
+            print("Invalid choice. Please select 'monthly', 'weekly', or 'exit'.")
+            continue
         
         # Collect income data
         income = get_income_input(period)
         
         # Collect expense data
         expenses = {}
-        expenses['groceries'] = get_expense_input("groceries", period)
-        expenses['electric'] = get_expense_input("electric", period)
-        expenses['gas'] = get_expense_input("gas", period)
+        for expense_name in ['groceries', 'electric', 'gas']:
+            expenses[expense_name] = get_expense_input(expense_name, period)
         
         while True:
             additional_expense_name = input("Enter an additional expense name (or 'done' to finish): ").strip()
             if additional_expense_name.lower() == 'done':
                 break
+            elif not additional_expense_name:
+                print("Expense name cannot be empty.")
+                continue
             expenses[additional_expense_name] = get_expense_input(additional_expense_name, period)
         
-        # Display the monthly report
-        display_monthly_report(income, expenses)
+        # Display the report
+        display_report(income, expenses, 'monthly')
         
         # Ask the user for the next step
         while True:
             next_step = input("Would you like to see the weekly breakdown report, input new amounts, or exit? (weekly/new/exit): ").strip().lower()
             if next_step == 'weekly':
-                display_weekly_report(income, expenses)
+                display_report(income, expenses, 'weekly')
                 break
             elif next_step == 'new':
                 break  # This will start the process over
